@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mrinmoy Kumar Maity | 3D Premium Portfolio</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --accent: #ff00c8;
+            --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #020205;
+            color: var(--text);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            cursor: none; /* Hide default cursor for custom one */
+        }
+
+        /* Custom Cursor */
+        #cursor-glow {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        #cursor-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* 3D Canvas Background */
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020205; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--primary), var(--secondary)); border-radius: 10px; }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(2, 2, 5, 0.4);
+            backdrop-filter: blur(25px);
+            z-index: 100;
+            border-bottom: 1px solid var(--glass-border);
+            transition: padding 0.3s ease;
+        }
+
+        nav.scrolled {
+            padding: 0.7rem 8%;
+        }
+
+        #scroll-progress {
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 35px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            opacity: 0.6;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+        }
+
+        .logo::before {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 10px var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: translateY(-50%) scale(1); }
+            50% { opacity: 0.5; transform: translateY(-50%) scale(0.8); }
+            100% { opacity: 1; transform: translateY(-50%) scale(1); }
+        }
+
+        /* Sections */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 120px 10%;
+            position: relative;
+        }
+
+        /* Glass Cards with 3D Depth */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 4rem;
+            width: 100%;
+            max-width: 1100px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .card-content {
+            transform: translateZ(50px); /* Content lift effect */
+        }
+
+        /* Hero Section */
+        .hero-content { text-align: center; max-width: 800px; }
+        .hero-content h1 {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+        .hero-content .subtitle {
+            font-size: 1.1rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 2.5rem;
+            display: block;
+        }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-main {
+            background: white;
+            color: #000;
+        }
+
+        .btn-main:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+            background: var(--primary);
+        }
+
+        /* Skill Grid */
+        .skill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 25px;
+            width: 100%;
+            margin-top: 3rem;
+        }
+
+        .skill-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            transition: 0.5s;
+        }
+
+        .skill-item:hover {
+            background: linear-gradient(145deg, rgba(0, 242, 255, 0.1), rgba(112, 0, 255, 0.1));
+            border-color: var(--primary);
+            transform: translateZ(30px);
+        }
+
+        .skill-item span { font-size: 2.5rem; display: block; margin-bottom: 1rem; }
+        .skill-item h4 { font-weight: 700; margin-bottom: 0.3rem; }
+        .skill-item small { opacity: 0.5; letter-spacing: 1px; }
+
+        /* Timeline/Education */
+        .timeline { border-left: 2px solid var(--glass-border); padding-left: 3rem; margin-top: 3rem; position: relative;}
+        .timeline-item { margin-bottom: 4rem; position: relative; }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -3.65rem;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            background: #020205;
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* Contact Section */
+        .contact-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        .contact-pill {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        
+        .contact-pill:hover { 
+            background: white; 
+            color: black; 
+            transform: translateY(-5px);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(112, 0, 255, 0.2);
+            border: 1px solid var(--secondary);
+            color: var(--primary);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            #cursor-glow, #cursor-dot { display: none; }
+            body { cursor: auto; }
+            section { padding: 100px 5%; }
+            .glass-card { padding: 2.5rem 1.5rem; }
+            .hero-content h1 { font-size: 3.5rem; }
+            .nav-links { display: none; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="cursor-glow"></div>
+    <div id="cursor-dot"></div>
+    <canvas id="bg"></canvas>
+
+    <nav id="navbar">
+        <div class="logo">MRINMOY</div>
+        <div class="nav-links">
+            <a href="#about">ABOUT</a>
+            <a href="#skills">SKILLS</a>
+            <a href="#education">EDUCATION</a>
+            <a href="#contact">CONTACT</a>
+        </div>
+        <div id="scroll-progress"></div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="hero-content">
+            <span class="subtitle">Future Engineer</span>
+            <h1>Turning Logic <br><span style="color: var(--primary)">Into Art.</span></h1>
+            <p style="font-size: 1.2rem; opacity: 0.6; margin-bottom: 3rem; line-height: 1.6;">
+                BCA Student specialized in Python Full Stack & AI Foundations. <br>Crafting high-performance digital experiences.
+            </p>
+            <div style="display: flex; gap: 20px; justify-content: center;">
+                <a href="#about" class="btn btn-main">View Profile</a>
+                <a href="#contact" class="btn" style="border: 1px solid var(--glass-border); color: white;">Contact Me</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about">
+        <div class="glass-card js-tilt">
+            <div class="card-content">
+                <h2 style="font-size: 2.5rem; margin-bottom: 2rem; font-weight: 800;">Engineering <span style="color: var(--secondary)">Mindset</span></h2>
+                <p style="line-height: 2; font-size: 1.15rem; opacity: 0.8; max-width: 800px;">
+                    Currently a 5th Semester BCA student at <b>Kharagpur College</b>. I don't just write code; I architect solutions. 
+                    From mastering complex <b>Data Structures</b> to experimenting with <b>Generative AI</b>, my journey is driven by 
+                    a relentless curiosity for how intelligent systems evolve.
+                </p>
+                
+                <div style="margin-top: 3rem; display: flex; flex-wrap: wrap;">
+                    <span class="tag">#PythonFullStack</span>
+                    <span class="tag">#ProblemSolving</span>
+                    <span class="tag">#GenAI</span>
+                    <span class="tag">#SoftwareDevelopment</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills">
+        <div class="glass-card js-tilt">
+            <div class="card-content">
+                <h2 style="font-size: 2.5rem; margin-bottom: 1rem; text-align: center; font-weight: 800;">Technical <span style="color: var(--primary)">Arsenal</span></h2>
+                <p style="text-align: center; opacity: 0.5; margin-bottom: 3rem;">Technologies I work with daily</p>
+                
+                <div class="skill-grid">
+                    <div class="skill-item"><span>🐍</span><h4>Python</h4><small>Backend Core</small></div>
+                    <div class="skill-item"><span>⚛️</span><h4>React.js</h4><small>Modern UI</small></div>
+                    <div class="skill-item"><span>🍃</span><h4>MongoDB</h4><small>NoSQL DB</small></div>
+                    <div class="skill-item"><span>🚀</span><h4>Express</h4><small>API Logic</small></div>
+                    <div class="skill-item"><span>📊</span><h4>Chart.js</h4><small>Visualization</small></div>
+                    <div class="skill-item"><span>🧠</span><h4>DSA</h4><small>Algorithms</small></div>
+                    <div class="skill-item"><span>🌐</span><h4>JS / ES6</h4><small>Programming</small></div>
+                    <div class="skill-item"><span>🤖</span><h4>GenAI</h4><small>AI Apps</small></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section id="education">
+        <div class="glass-card js-tilt">
+            <div class="card-content">
+                <h2 style="font-size: 2.5rem; margin-bottom: 3rem; font-weight: 800;">Learning Path</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Python with Fullstack journey</h3>
+                        <p style="color: var(--primary); font-weight: 700; margin-bottom: 1rem;">My focus is become a python Full Stack devloper end of 2026</p>
+                       
+                    </div>
+                    <div class="timeline-item">
+                        <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Bachelor of Computer Applications</h3>
+                        <p style="color: var(--primary); font-weight: 700; margin-bottom: 1rem;">Kharagpur College | 2023 - 2027</p>
+                        <p style="opacity: 0.7;">Specializing in Computer Science and Software Systems.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Industry Standard Certs</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                <b>JP Morgan</b><br><small>Software Engineering Simulation</small>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                <b>AWS Certified</b><br><small>Cloud Foundations</small>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                <b>GenAI</b><br><small>Data Analytics Specialization</small>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                <b>Python</b><br><small>Advanced Data Analysis</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="glass-card js-tilt" style="text-align: center;">
+            <div class="card-content">
+                <h2 style="font-size: 3.5rem; margin-bottom: 1rem; font-weight: 800;">Let's Build <span style="color: var(--primary)">Together.</span></h2>
+                <p style="opacity: 0.6; margin-bottom: 3rem;">Currently available for internships and collaborative open-source projects.</p>
+                
+                <div class="contact-links">
+                    <a href="mailto:maitymrinmoy65@gmail.com" class="contact-pill">Send an Email</a>
+                    <a href="https://linkedin.com/in/mrinmoykumarmaity" target="_blank" class="contact-pill">LinkedIn Profile</a>
+                    <a href="tel:8927469163" class="contact-pill">Call Me</a>
+                </div>
+                
+                <p style="margin-top: 4rem; font-size: 0.8rem; opacity: 0.4; letter-spacing: 2px;">LODHASULI, JHARGRAM, WEST BENGAL</p>
+            </div>
+        </div>
+    </section>
+
+    <footer style="padding: 4rem; text-align: center; font-size: 0.7rem; opacity: 0.3; letter-spacing: 3px;">
+        DESIGNED & DEVELOPED BY MRINMOY KUMAR MAITY &copy; 2024
+    </footer>
+
+    <script>
+        // --- CUSTOM CURSOR ---
+        const glow = document.getElementById('cursor-glow');
+        const dot = document.getElementById('cursor-dot');
+        
+        window.addEventListener('mousemove', (e) => {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+            dot.style.left = e.clientX + 'px';
+            dot.style.top = e.clientY + 'px';
+        });
+
+        // --- SCROLL EFFECTS ---
+        const navbar = document.getElementById('navbar');
+        const progress = document.getElementById('scroll-progress');
+
+        window.addEventListener('scroll', () => {
+            // Navbar Shrink
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+
+            // Progress Bar
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            progress.style.width = scrolled + "%";
+        });
+
+        // --- THREE.JS ADVANCED BACKGROUND ---
+        let scene, camera, renderer, particles;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg'), antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Create colorful space particles
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const colors = [];
+            const colorPalette = [new THREE.Color(0x00f2ff), new THREE.Color(0x7000ff), new THREE.Color(0xff00c8)];
+
+            for (let i = 0; i < 5000; i++) {
+                vertices.push(THREE.MathUtils.randFloatSpread(20)); // x
+                vertices.push(THREE.MathUtils.randFloatSpread(20)); // y
+                vertices.push(THREE.MathUtils.randFloatSpread(20)); // z
+                
+                const col = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                colors.push(col.r, col.g, col.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.035,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particles.rotation.y += 0.001;
+            particles.rotation.x += 0.0005;
+            renderer.render(scene, camera);
+        }
+
+        // --- 3D TILT EFFECT ---
+        const cards = document.querySelectorAll('.js-tilt');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 25;
+                const rotateY = (centerX - x) / 25;
+                
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'rotateX(0) rotateY(0)';
+                card.style.transition = 'all 0.5s ease';
+            });
+            
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'none';
+            });
+        });
+
+        // --- SCROLL REVEAL ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.style.opacity = "1";
+                    entry.target.style.transform = "translateY(0) scale(1)";
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.style.opacity = "0";
+            card.style.transform = "translateY(40px) scale(0.98)";
+            card.style.transition = "all 1s cubic-bezier(0.2, 1, 0.3, 1)";
+            observer.observe(card);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -7,6 +7,7 @@ Built with a focus on visual depth and smooth user experience using pure fronten
 🚀 Live Demo
 
 You can view the live version of this portfolio here:
+https://portflionew.netlify.app/
 
 ✨ Features
 
